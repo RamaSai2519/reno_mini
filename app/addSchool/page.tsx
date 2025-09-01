@@ -1,14 +1,16 @@
 "use client"
 
+import { z } from "zod"
+import axios from "axios"
 import type React from "react"
 import { useState } from "react"
-import { z } from "zod"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BASE } from "@/app/api/schools/route"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 
 const formSchema = z.object({
@@ -63,18 +65,23 @@ export default function AddSchoolPage() {
       // Upload image
       const fd = new FormData()
       fd.append("file", file)
-      const upRes = await fetch("/api/upload", { method: "POST", body: fd })
-      if (!upRes.ok) {
-        const t = await upRes.text()
-        throw new Error(t || "Image upload failed")
-      }
-      const { url } = (await upRes.json()) as { url: string }
+      debugger;
+      const uploadResponse = await axios.post(`${BASE}/upload`, {
+        filename: (file as File).name,
+        filetype: (file as File).type || 'image/heic'
+      })
+
+      const presignedUrl = uploadResponse.data.data.url
+      await axios.put(presignedUrl, file, {
+        headers: {
+          'Content-Type': (file as File).type
+        }
+      })
+
+      const url = presignedUrl.split('?')[0]
 
       // Post school data to backend via proxy
-      const payload = {
-        ...values,
-        image: typeof window !== "undefined" ? `${window.location.origin}${url}` : url,
-      }
+      const payload = { ...values, image: url }
 
       const postRes = await fetch("/api/schools", {
         method: "POST",
@@ -90,6 +97,7 @@ export default function AddSchoolPage() {
       reset()
       setFile(null)
       setPreview(null)
+      window.location.href = "/showSchools"
     } catch (err: any) {
       toast({ title: "Error", description: err?.message || "Something went wrong", variant: "destructive" })
     }

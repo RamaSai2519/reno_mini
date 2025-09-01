@@ -51,12 +51,12 @@ export default function RootLayout({
           <div className="page-shell flex items-center justify-between gap-4 py-3">
             <Link href="/showSchools" className="flex items-center gap-2">
               <span className="inline-block h-6 w-6 rounded-md bg-secondary/90" aria-hidden />
-              <span className="font-heading h-title text-lg md:text-xl">School Data</span>
+              <span className="font-heading h-title text-lg md:text-xl">Reno Mini</span>
             </Link>
             <nav className="flex items-center gap-2 md:gap-3">
               <Link
                 href="/showSchools"
-                className="link-pill transition hover:bg-secondary hover:text-secondary-foreground"
+                className="btn-cta"
               >
                 Browse
               </Link>

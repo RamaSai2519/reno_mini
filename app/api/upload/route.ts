@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
-import { mkdir, stat, writeFile } from "fs/promises"
-import path from "path"
-import crypto from "crypto"
+import axios from "axios"
+
+const UPLOAD_ENDPOINT = "https://uo5exhg7ej.execute-api.ap-south-1.amazonaws.com/main/con/upload"
 
 export async function POST(request: Request) {
   try {
+    debugger;
     const formData = await request.formData()
     const file = formData.get("file") as File | null
 
@@ -19,25 +20,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 })
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    debugger;
 
-    const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""
-    const filename = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`
+    const uploadResponse = await axios.post(UPLOAD_ENDPOINT, {
+      filename: file.name,
+      filetype: file.type
+    })
+    console.log("🚀 ~ POST ~ uploadResponse:", uploadResponse)
 
-    const dir = path.join(process.cwd(), "public", "schoolImages")
-    try {
-      await stat(dir)
-    } catch {
-      await mkdir(dir, { recursive: true })
-    }
+    const presignedUrl = uploadResponse.data.data.url
 
-    const filePath = path.join(dir, filename)
-    await writeFile(filePath, buffer)
+    // Upload the file to the presigned URL
+    await axios.put(presignedUrl, file, {
+      headers: {
+        'Content-Type': (file as File).type
+      }
+    })
 
-    const urlPath = `/schoolImages/${filename}`
-    return NextResponse.json({ url: urlPath })
+    // Extract the file URL (remove query parameters)
+    const fileUrl = presignedUrl.split('?')[0]
+
+    return NextResponse.json({ url: fileUrl })
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Upload failed" }, { status: 500 })
+    const log = NextResponse.json({ error: e?.message || "Upload failed" }, { status: 500 })
+    console.log("🚀 ~ Upload ~ log:", log)
+    return log
   }
 }
