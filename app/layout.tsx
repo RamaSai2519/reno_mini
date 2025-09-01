@@ -6,7 +6,8 @@ import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "Reno Mini",
-  description: "A mini project to showcase skills in Next.js, MySQL, Python FLask and Tailwind CSS"
+  description: "A mini project to showcase skills in Next.js, MySQL, Python FLask and Tailwind CSS",
+    generator: 'v0.app'
 }
 
 const geistSans = Geist({
